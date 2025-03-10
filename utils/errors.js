@@ -16,6 +16,7 @@ function handleError(err, req, res, next) {
     res
         .status(err instanceof ValidationError ? 400 : 500)
         .json({
+            ok: false,
             message: err instanceof ValidationError ? err.message : 'Sorry, server error occurred.',
         });
 }

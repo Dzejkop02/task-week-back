@@ -1,7 +1,7 @@
 require('dotenv').config();
 const crypto = require('crypto');
 
-const salt = process.env.SALT || 'test';
+const salt = process.env.SALT || '';
 
 const hashPwd = p => {
     const hmac = crypto.createHmac(
