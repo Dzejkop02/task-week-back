@@ -1,7 +1,12 @@
 require('dotenv').config();
+require('express-async-errors');
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require("cookie-parser");
+const {handleError} = require("./utils/errors");
+
+const {userRouter} = require("./routers/user");
+const {authRouter} = require("./routers/auth");
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -18,7 +23,11 @@ app.use(express.urlencoded({
 }));
 app.use(express.json());
 
+app.use('/user', userRouter);
+// app.use('/auth', authRouter);
 
-app.listen(port, () => {
+app.use(handleError);
+
+app.listen(port, 'localhost', () => {
     console.log(`Listening on http://localhost:${port}`);
 });
