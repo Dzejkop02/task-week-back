@@ -54,11 +54,7 @@ async function decodeToken(payload) {
         throw new UnauthorizedError('Not logged in.');
     }
 
-    const user = await UserRecord.findByToken(jwt.id);
-    user.current_token_id = null;
-    await user.updateToken();
-
-    return user;
+    return await UserRecord.findByToken(jwt.id);
 }
 
 module.exports = {

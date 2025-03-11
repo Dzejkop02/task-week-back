@@ -33,7 +33,10 @@ authRouter
     })
     .get('/logout', async (req, res) => {
         const jwtCookie = req.cookies?.['jwt'];
-        await decodeToken(jwtCookie);
+        const user = await decodeToken(jwtCookie);
+
+        user.current_token_id = null;
+        await user.updateToken();
 
         res
             .clearCookie('jwt', {
