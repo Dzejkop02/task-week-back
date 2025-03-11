@@ -2,12 +2,12 @@ const {Router} = require("express");
 const {UserRecord} = require("../records/user.record");
 const {hashPwd} = require("../helpers/hashPwd");
 const {ValidationError} = require("../utils/errors");
-const {generateToken, createToken} = require("../utils/tokens");
+const {generateToken, createToken, decodeToken} = require("../utils/tokens");
 
 const authRouter = Router();
 
 authRouter
-    .post('/', async (req, res) => {
+    .post('/login', async (req, res) => {
         const {email, password} = req.body;
         const user = await UserRecord.findToLogin(email, hashPwd(password));
 
@@ -29,6 +29,21 @@ authRouter
                 data: {
                     name: user.name,
                 },
+            });
+    })
+    .get('/logout', async (req, res) => {
+        const jwtCookie = req.cookies?.['jwt'];
+        await decodeToken(jwtCookie);
+
+        res
+            .clearCookie('jwt', {
+                secure: false,
+                domain: 'localhost',
+                httpOnly: true,
+            })
+            .status(200)
+            .json({
+                ok: true,
             });
     });
 
