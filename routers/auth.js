@@ -2,7 +2,7 @@ const {Router} = require("express");
 const {UserRecord} = require("../records/user.record");
 const {hashPwd} = require("../helpers/hashPwd");
 const {ValidationError} = require("../utils/errors");
-const {generateToken, createToken, decodeToken} = require("../utils/tokens");
+const {generateToken, createToken, decodeToken, deleteJwtCookie} = require("../utils/tokens");
 
 const authRouter = Router();
 
@@ -33,7 +33,11 @@ authRouter
     })
     .get('/logout', async (req, res) => {
         const jwtCookie = req.cookies?.['jwt'];
-        const user = await decodeToken(jwtCookie);
+        const user = await decodeToken(jwtCookie, res);
+        if (!user) {
+            deleteJwtCookie(res);
+            return;
+        }
 
         user.current_token_id = null;
         await user.updateToken();

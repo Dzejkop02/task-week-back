@@ -1,6 +1,6 @@
 require('dotenv').config();
 const { v4: uuid4 } = require('uuid');
-const {sign, verify} = require('jsonwebtoken');
+const {sign, verify, TokenExpiredError} = require('jsonwebtoken');
 const {UserRecord} = require("../records/user.record");
 const {UnauthorizedError} = require("./errors");
 
@@ -40,25 +40,48 @@ function createToken(id) {
 
 // Verify, decoded token and return logged in user.
 async function decodeToken(payload) {
-    if (!payload) {
-        throw new UnauthorizedError('Not logged in.');
+    try {
+        if (!payload) {
+            throw new UnauthorizedError('Not logged in.');
+        }
+
+        const jwtSecret = process.env.JWT_SECRET || '';
+        const jwt = verify(
+            payload,
+            jwtSecret,
+        );
+
+        if (!jwt.id) {
+            throw new UnauthorizedError('Not logged in.');
+        }
+
+        return await UserRecord.findByToken(jwt.id);
+    } catch (e) {
+        if (e instanceof TokenExpiredError) {
+            return null;
+        } else {
+            throw e;
+        }
     }
+}
 
-    const jwtSecret = process.env.JWT_SECRET || '';
-    const jwt = verify(
-        payload,
-        jwtSecret,
-    );
-
-    if (!jwt.id) {
-        throw new UnauthorizedError('Not logged in.');
-    }
-
-    return await UserRecord.findByToken(jwt.id);
+function deleteJwtCookie(res) {
+    res
+        .clearCookie('jwt', {
+            secure: false,
+            domain: 'localhost',
+            httpOnly: true,
+        })
+        .status(401)
+        .json({
+            ok: false,
+            message: 'User not logged in. Cookies cleared.'
+        });
 }
 
 module.exports = {
     generateToken,
     createToken,
     decodeToken,
+    deleteJwtCookie,
 }
