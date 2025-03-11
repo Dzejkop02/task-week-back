@@ -24,7 +24,7 @@ app.use(express.urlencoded({
 app.use(express.json());
 
 app.use('/user', userRouter);
-// app.use('/auth', authRouter);
+app.use('/auth', authRouter);
 
 app.use(handleError);
 

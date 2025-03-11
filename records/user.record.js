@@ -31,9 +31,29 @@ class UserRecord {
         return rows[0] ? new UserRecord(rows[0]) : null;
     }
 
+    static async findToLogin(email, pwdHash) {
+        const {rows} =  await pool.query(`SELECT * FROM users WHERE email = ($1) AND pwd_hash = ($2)`, [email, pwdHash]);
+        return rows[0] ? new UserRecord(rows[0]) : null;
+    }
+
+    static async findByToken(token) {
+        const {rows} =  await pool.query(`SELECT * FROM users WHERE current_token_id = ($1)`, [token]);
+        return rows[0] ? new UserRecord(rows[0]) : null;
+    }
+
     async save() {
-        const result = await pool.query(`INSERT INTO users (id, name, email, pwd_hash) VALUES ($1, $2, $3, $4)`, [
-            this.id, this.name, this.email, this.pwd_hash
+        const result = await pool.query(`INSERT INTO users (id, name, email, pwd_hash, current_token_id) VALUES ($1, $2, $3, $4, $5)`, [
+            this.id, this.name, this.email, this.pwd_hash, this.current_token_id
+        ]);
+
+        if (result.rowCount < 1) {
+            throw new Error('Error while adding new user.');
+        }
+    }
+
+    async updateToken() {
+        const result = await pool.query(`UPDATE users SET current_token_id = ($1) WHERE id = ($2)`, [
+            this.current_token_id, this.id
         ]);
 
         if (result.rowCount < 1) {
