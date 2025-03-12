@@ -24,6 +24,11 @@ class TaskRecord {
         return rows[0] ? new TaskRecord(rows[0]) : null;
     }
 
+    static async findAll(userId) {
+        const {rows} =  await pool.query(`SELECT * FROM tasks WHERE user_id = ($1)`, [userId]);
+        return rows.map(result => new TaskRecord(result));
+    }
+
     async save() {
         const result = await pool.query(`INSERT INTO tasks (id, user_id, title, description, is_completed) VALUES ($1, $2, $3, $4, $5)`, [
             this.id, this.user_id, this.title, this.description, this.is_completed

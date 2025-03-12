@@ -72,7 +72,12 @@ taskRouter
         res.status(200).json({ok: true});
     })
     .get('/', authenticateUser, async (req, res) => {
+        const taskList = await TaskRecord.findAll(req.user.id);
 
+        res.status(200).json({
+            ok: true,
+            data: taskList,
+        });
     });
 
 module.exports = {
