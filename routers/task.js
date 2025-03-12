@@ -50,6 +50,7 @@ taskRouter
         await task.update();
 
         res.status(200).json({
+            ok: true,
             data: {
                 id: task.id,
                 title: task.title,
@@ -58,6 +59,20 @@ taskRouter
                 created_at: task.created_at,
             },
         });
+    })
+    .delete('/:id', authenticateUser, async (req, res) => {
+        const task = await TaskRecord.find(req.params.id);
+
+        if (!task) {
+            throw new ValidationError('No task with this id found!');
+        }
+
+        await task.delete();
+
+        res.status(200).json({ok: true});
+    })
+    .get('/', authenticateUser, async (req, res) => {
+
     });
 
 module.exports = {

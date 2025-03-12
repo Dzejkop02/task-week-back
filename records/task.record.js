@@ -43,6 +43,16 @@ class TaskRecord {
             throw new Error('Error while adding new user.');
         }
     }
+
+    async delete() {
+        const result = await pool.query(`DELETE FROM tasks WHERE id = ($1)`, [
+            this.id
+        ]);
+
+        if (result.rowCount < 1) {
+            throw new Error('Error while adding new user.');
+        }
+    }
 }
 
 module.exports = {
