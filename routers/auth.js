@@ -2,7 +2,8 @@ const {Router} = require("express");
 const {UserRecord} = require("../records/user.record");
 const {hashPwd} = require("../helpers/hashPwd");
 const {ValidationError} = require("../utils/errors");
-const {generateToken, createToken, decodeToken, deleteJwtCookie} = require("../utils/tokens");
+const {generateToken, createToken, deleteJwtCookie} = require("../utils/tokens");
+const {authenticateUser} = require("../middlewares/auth.middleware");
 
 const authRouter = Router();
 
@@ -31,27 +32,17 @@ authRouter
                 },
             });
     })
-    .get('/logout', async (req, res) => {
-        const jwtCookie = req.cookies?.['jwt'];
-        const user = await decodeToken(jwtCookie, res);
-        if (!user) {
+    .get('/logout', authenticateUser, async (req, res) => {
+        try {
+            req.user.current_token_id = null;
+            await req.user.updateToken();
+
             deleteJwtCookie(res);
-            return;
+            res.status(200).json({ ok: true });
+        } catch (error) {
+            deleteJwtCookie(res);
+            throw error;
         }
-
-        user.current_token_id = null;
-        await user.updateToken();
-
-        res
-            .clearCookie('jwt', {
-                secure: false,
-                domain: 'localhost',
-                httpOnly: true,
-            })
-            .status(200)
-            .json({
-                ok: true,
-            });
     });
 
 module.exports = {
