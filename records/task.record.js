@@ -19,6 +19,11 @@ class TaskRecord {
         this.created_at = obj?.created_at;
     }
 
+    static async find(id) {
+        const {rows} =  await pool.query(`SELECT * FROM tasks WHERE id = ($1)`, [id]);
+        return rows[0] ? new TaskRecord(rows[0]) : null;
+    }
+
     async save() {
         const result = await pool.query(`INSERT INTO tasks (id, user_id, title, description, is_completed) VALUES ($1, $2, $3, $4, $5)`, [
             this.id, this.user_id, this.title, this.description, this.is_completed
@@ -26,6 +31,16 @@ class TaskRecord {
 
         if (result.rowCount < 1) {
             throw new Error('Error while adding new task.');
+        }
+    }
+
+    async update() {
+        const result = await pool.query(`UPDATE tasks SET title = ($1), description = ($2), is_completed = ($3) WHERE id = ($4)`, [
+            this.title, this.description, this.is_completed, this.id
+        ]);
+
+        if (result.rowCount < 1) {
+            throw new Error('Error while adding new user.');
         }
     }
 }
