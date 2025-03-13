@@ -8,6 +8,7 @@ const {handleError} = require("./utils/errors");
 const {userRouter} = require("./routers/user");
 const {authRouter} = require("./routers/auth");
 const {taskRouter} = require("./routers/task");
+const {eventRouter} = require("./routers/event");
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -27,6 +28,7 @@ app.use(express.json());
 app.use('/user', userRouter);
 app.use('/auth', authRouter);
 app.use('/task', taskRouter);
+app.use('/event', eventRouter);
 
 app.use(handleError);
 
