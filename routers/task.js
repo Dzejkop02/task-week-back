@@ -29,8 +29,8 @@ taskRouter
                     id: newTask.id,
                     title: newTask.title,
                     description: newTask.description,
-                    is_completed: newTask.is_completed,
-                    created_at: newTask.created_at,
+                    isCompleted: newTask.is_completed,
+                    createdAt: newTask.created_at,
                 },
             });
     })
@@ -55,8 +55,8 @@ taskRouter
                 id: task.id,
                 title: task.title,
                 description: task.description,
-                is_completed: task.is_completed,
-                created_at: task.created_at,
+                isCompleted: task.is_completed,
+                createdAt: task.created_at,
             },
         });
     })
@@ -76,7 +76,13 @@ taskRouter
 
         res.status(200).json({
             ok: true,
-            data: taskList,
+            data: taskList.map(task => ({
+                id: task.id,
+                title: task.title,
+                description: task.description,
+                isCompleted: task.is_completed,
+                createdAt: task.created_at,
+            })),
         });
     });
 
