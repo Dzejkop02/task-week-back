@@ -2,36 +2,46 @@ const {Router} = require("express");
 const { v4: uuid4 } = require('uuid');
 const {TaskRecord} = require("../records/task.record");
 const {authenticateUser} = require("../middlewares/auth.middleware");
-const {ValidationError} = require("../utils/errors");
+const {ValidationError, UnauthorizedError} = require("../utils/errors");
 
 const taskRouter = Router();
+
+const formatTaskResponse = (task) => ({
+    id: task.id,
+    title: task.title,
+    description: task.description,
+    isCompleted: task.is_completed,
+    createdAt: task.created_at,
+});
+
+const validateTaskOwnership = (task, userId) => {
+    if (!task) {
+        throw new ValidationError('No task with this id found!');
+    }
+    if (task.user_id !== userId) {
+        throw new UnauthorizedError('Not authorized to perform this action');
+    }
+};
 
 taskRouter
     .post('/', authenticateUser, async (req, res) => {
         const {title, description, isCompleted} = req.body;
 
-        const data = {
+        const newTask = new TaskRecord({
             id: uuid4(),
             user_id: req.user.id,
             title,
             description,
             is_completed: isCompleted,
-        };
+        });
 
-        const newTask = new TaskRecord(data);
         await newTask.save();
 
         res
             .status(201)
             .json({
                 ok: true,
-                data: {
-                    id: newTask.id,
-                    title: newTask.title,
-                    description: newTask.description,
-                    isCompleted: newTask.is_completed,
-                    createdAt: newTask.created_at,
-                },
+                data: formatTaskResponse(newTask),
             });
     })
     .patch('/:id', authenticateUser, async (req, res) => {
@@ -51,22 +61,13 @@ taskRouter
 
         res.status(200).json({
             ok: true,
-            data: {
-                id: task.id,
-                title: task.title,
-                description: task.description,
-                isCompleted: task.is_completed,
-                createdAt: task.created_at,
-            },
+            data: formatTaskResponse(task),
         });
     })
     .delete('/:id', authenticateUser, async (req, res) => {
         const task = await TaskRecord.find(req.params.id);
 
-        if (!task) {
-            throw new ValidationError('No task with this id found!');
-        }
-
+        validateTaskOwnership(task, req.user.id);
         await task.delete();
 
         res.status(200).json({ok: true});
@@ -76,13 +77,7 @@ taskRouter
 
         res.status(200).json({
             ok: true,
-            data: taskList.map(task => ({
-                id: task.id,
-                title: task.title,
-                description: task.description,
-                isCompleted: task.is_completed,
-                createdAt: task.created_at,
-            })),
+            data: taskList.map(formatTaskResponse),
         });
     });
 
