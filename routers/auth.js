@@ -23,6 +23,7 @@ authRouter
                 secure: false,
                 domain: 'localhost',
                 httpOnly: true,
+                maxAge: token.expiresIn * 1000,
             })
             .status(200)
             .json({

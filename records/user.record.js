@@ -57,7 +57,7 @@ class UserRecord {
         ]);
 
         if (result.rowCount < 1) {
-            throw new Error('Error while adding new user.');
+            throw new Error('Error updating user token.');
         }
     }
 }

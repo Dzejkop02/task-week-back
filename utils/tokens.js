@@ -23,6 +23,7 @@ async function generateToken(user) {
 function createToken(id) {
     const payload = {id};
     const expiresIn = 60 * 60 * 24;
+    // const expiresIn = 5; //for tests
     const jwtSecret = process.env.JWT_SECRET || '';
 
     const accessToken = sign(

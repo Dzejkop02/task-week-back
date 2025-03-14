@@ -6,14 +6,6 @@ const { v4: uuid4 } = require('uuid');
 
 const userRouter = Router();
 
-// {
-//     id;
-//     name;
-//     email;
-//     pwd_hash;
-//     current_token_id;
-// }
-
 userRouter
     .post('/', async (req, res) => {
         const {name, email, password} = req.body;

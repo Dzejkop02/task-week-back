@@ -8,7 +8,7 @@ function handleError(err, req, res, next) {
             .status(401)
             .json({
                 ok: false,
-                message: err instanceof UnauthorizedError ? err.message : 'You are not authorised to access this content.',
+                message: err.message,
             });
         return;
     }

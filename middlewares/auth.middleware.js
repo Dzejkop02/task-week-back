@@ -1,4 +1,4 @@
-const { decodeToken, deleteJwtCookie } = require('../utils/tokens');
+const { decodeToken, deleteJwtCookie, createToken} = require('../utils/tokens');
 
 async function authenticateUser(req, res, next) {
     try {
@@ -12,6 +12,15 @@ async function authenticateUser(req, res, next) {
                 message: 'User not logged in. Cookies cleared.',
             });
         }
+
+        // Przedłużanie ważności tokenu
+        const newToken = createToken(user.current_token_id);
+        res.cookie('jwt', newToken.accessToken, {
+            secure: false,
+            domain: 'localhost',
+            httpOnly: true,
+            maxAge: newToken.expiresIn * 1000,
+        });
 
         req.user = user;
         next();
