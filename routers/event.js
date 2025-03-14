@@ -2,7 +2,7 @@ const {Router} = require("express");
 const { v4: uuid4 } = require('uuid');
 const {authenticateUser} = require("../middlewares/auth.middleware");
 const {EventRecord} = require("../records/event.record");
-const {ValidationError} = require("../utils/errors");
+const {ValidationError, UnauthorizedError} = require("../utils/errors");
 
 const eventRouter = Router();
 
@@ -17,6 +17,15 @@ const formatEventResponse = (event) => ({
     dayOfWeek: event.day_of_week,
     createdAt: event.created_at,
 });
+
+const validateEventOwnership = (event, userId) => {
+    if (!event) {
+        throw new ValidationError('No task with this id found!');
+    }
+    if (event.user_id !== userId) {
+        throw new UnauthorizedError('Not authorized to perform this action');
+    }
+};
 
 eventRouter
     .post('/', authenticateUser, async (req, res) => {
@@ -67,7 +76,24 @@ eventRouter
             ok: true,
             data: formatEventResponse(event),
         });
+    })
+    .get('/', authenticateUser, async (req, res) => {
+        const eventList = await EventRecord.findAll(req.user.id);
+
+        res.status(200).json({
+            ok: true,
+            data: eventList.map(formatEventResponse),
+        })
+    })
+    .delete('/:id', authenticateUser, async (req, res) => {
+        const event = await EventRecord.find(req.params.id);
+
+        validateEventOwnership(event, req.user.id);
+        await event.delete();
+
+        res.status(200).json({ok: true});
     });
+
 
 module.exports = {
     eventRouter,
