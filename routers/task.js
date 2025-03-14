@@ -11,16 +11,23 @@ const formatTaskResponse = (task) => ({
     title: task.title,
     description: task.description,
     isCompleted: task.is_completed,
-    createdAt: task.created_at,
+    // createdAt: task.created_at,
+    createdAt: task.created_at.toISOString(),
 });
 
-const validateTaskOwnership = (task, userId) => {
+const validateTaskOwnershipMiddleware = async (req, res, next) => {
+    const task = await TaskRecord.find(req.params.id);
+
     if (!task) {
         throw new ValidationError('No task with this id found!');
     }
-    if (task.user_id !== userId) {
+
+    if (task.user_id !== req.user.id) {
         throw new UnauthorizedError('Not authorized to perform this action');
     }
+
+    req.task = task;
+    next();
 };
 
 taskRouter
@@ -44,15 +51,14 @@ taskRouter
                 data: formatTaskResponse(addedTask),
             });
     })
-    .patch('/:id', authenticateUser, async (req, res) => {
+    .patch('/:id', authenticateUser, validateTaskOwnershipMiddleware, async (req, res) => {
         const {title, description, isCompleted} = req.body;
-        const task = await TaskRecord.find(req.params.id);
 
-        validateTaskOwnership(task, req.user.id);
+        const task = req.task;
 
         task.title = title ?? task.title;
         task.description = description ?? task.description;
-        task.is_completed = isCompleted ?? task.is_completed;
+        task.is_completed = isCompleted !== undefined ? isCompleted : task.is_completed;
 
         const addedTask = await task.update();
 
@@ -61,11 +67,8 @@ taskRouter
             data: formatTaskResponse(addedTask),
         });
     })
-    .delete('/:id', authenticateUser, async (req, res) => {
-        const task = await TaskRecord.find(req.params.id);
-
-        validateTaskOwnership(task, req.user.id);
-        await task.delete();
+    .delete('/:id', authenticateUser, validateTaskOwnershipMiddleware, async (req, res) => {
+        await req.task.delete();
 
         res.status(200).json({ok: true});
     })

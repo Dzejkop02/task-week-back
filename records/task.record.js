@@ -3,13 +3,7 @@ const {ValidationError} = require("../utils/errors");
 
 class TaskRecord {
     constructor(obj) {
-        if (!obj.title || obj.title.length > 100) {
-            throw new ValidationError('Invalid title.');
-        }
-
-        if (obj.description && obj.description.length > 255) {
-            throw new ValidationError('Invalid description.');
-        }
+        this.validate(obj);
 
         this.id = obj.id;
         this.user_id = obj.user_id;
@@ -17,6 +11,16 @@ class TaskRecord {
         this.description = obj?.description;
         this.is_completed = obj?.is_completed ?? false;
         this.created_at = obj?.created_at;
+    }
+
+    validate(obj) {
+        if (!obj.title || obj.title.length > 100) {
+            throw new ValidationError('Invalid title.');
+        }
+
+        if (obj.description && obj.description.length > 255) {
+            throw new ValidationError('Invalid description.');
+        }
     }
 
     static async find(id) {
@@ -42,12 +46,14 @@ class TaskRecord {
     }
 
     async update() {
+        this.validate(this);
+
         const result = await pool.query(`UPDATE tasks SET title = ($1), description = ($2), is_completed = ($3) WHERE id = ($4)  RETURNING *`, [
             this.title, this.description, this.is_completed, this.id
         ]);
 
         if (result.rowCount < 1) {
-            throw new Error('Error while adding new user.');
+            throw new Error('Error updating task.');
         }
 
         return new TaskRecord(result.rows[0])
@@ -59,7 +65,7 @@ class TaskRecord {
         ]);
 
         if (result.rowCount < 1) {
-            throw new Error('Error while adding new user.');
+            throw new Error('Error deleting task.');
         }
     }
 }
