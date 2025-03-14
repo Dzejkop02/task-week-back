@@ -2,8 +2,22 @@ const {Router} = require("express");
 const { v4: uuid4 } = require('uuid');
 const {authenticateUser} = require("../middlewares/auth.middleware");
 const {EventRecord} = require("../records/event.record");
+const {ValidationError} = require("../utils/errors");
 
 const eventRouter = Router();
+
+const formatEventResponse = (event) => ({
+    id: event.id,
+    title: event.title,
+    description: event.description,
+    startTime: event.start_time,
+    endTime: event.end_time,
+    color: event.color,
+    isRecurring: event.is_recurring,
+    dayOfWeek: event.day_of_week,
+    createdAt: event.created_at,
+});
+
 eventRouter
     .post('/', authenticateUser, async (req, res) => {
         const {title, description, startTime, endTime, color, isRecurring, dayOfWeek} = req.body;
@@ -27,18 +41,32 @@ eventRouter
             .status(201)
             .json({
                 ok: true,
-                data: {
-                    id: newEvent.id,
-                    title: newEvent.title,
-                    description: newEvent.description,
-                    startTime: newEvent.start_time,
-                    endTime: newEvent.end_time,
-                    color: newEvent.color,
-                    isRecurring: newEvent.is_recurring,
-                    dayOfWeek: newEvent.day_of_week,
-                    createdAt: newEvent.created_at,
-                },
+                data: formatEventResponse(newEvent),
             });
+    })
+    .patch('/:id', authenticateUser, async (req, res) => {
+        const {title, description, startTime, endTime, color, isRecurring, dayOfWeek} = req.body;
+
+        const event = await EventRecord.find(req.params.id);
+
+        if (!event) {
+            throw new ValidationError('No task with this id found!');
+        }
+
+        event.title = title ?? event.title;
+        event.description = description ?? event.description;
+        event.start_time = startTime ?? event.start_time;
+        event.end_time = endTime ?? event.end_time;
+        event.color = color ?? event.color;
+        event.is_recurring = isRecurring ?? event.is_recurring;
+        event.day_of_week = dayOfWeek ?? event.day_of_week;
+
+        await event.update();
+
+        res.status(200).json({
+            ok: true,
+            data: formatEventResponse(event),
+        });
     });
 
 module.exports = {
