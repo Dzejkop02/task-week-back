@@ -30,23 +30,27 @@ class TaskRecord {
     }
 
     async save() {
-        const result = await pool.query(`INSERT INTO tasks (id, user_id, title, description, is_completed) VALUES ($1, $2, $3, $4, $5)`, [
+        const result = await pool.query(`INSERT INTO tasks (id, user_id, title, description, is_completed) VALUES ($1, $2, $3, $4, $5) RETURNING *`, [
             this.id, this.user_id, this.title, this.description, this.is_completed
         ]);
 
         if (result.rowCount < 1) {
             throw new Error('Error while adding new task.');
         }
+
+        return new TaskRecord(result.rows[0])
     }
 
     async update() {
-        const result = await pool.query(`UPDATE tasks SET title = ($1), description = ($2), is_completed = ($3) WHERE id = ($4)`, [
+        const result = await pool.query(`UPDATE tasks SET title = ($1), description = ($2), is_completed = ($3) WHERE id = ($4)  RETURNING *`, [
             this.title, this.description, this.is_completed, this.id
         ]);
 
         if (result.rowCount < 1) {
             throw new Error('Error while adding new user.');
         }
+
+        return new TaskRecord(result.rows[0])
     }
 
     async delete() {

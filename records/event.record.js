@@ -2,7 +2,7 @@ const {pool} = require("../utils/db");
 const {ValidationError} = require("../utils/errors");
 
 const hexRegex = /^#([0-9A-Fa-f]{6})$/;
-const timeRegex = /^(?:(?:([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?)|(?:24:00(?::00)?))$/;
+const timeRegex = /^(?:(?:0?\d|1\d|2[0-3]):[0-5]\d(?::[0-5]\d)?|24:00(?::00)?)$/;
 const toMinutes = (time) => {
     if (time === '24:00') return 24 * 60;
     const [h, m] = time.split(':').map(Number);
@@ -28,6 +28,7 @@ class EventRecord {
         }
 
         if (!timeRegex.test(obj.end_time)) {
+            console.log('Invalid time:', obj.end_time)
             throw new ValidationError('Invalid end time.');
         }
 
@@ -63,23 +64,27 @@ class EventRecord {
 
     async save() {
         const result = await pool.query(
-            `INSERT INTO events (id, user_id, title, description, start_time, end_time, color, is_recurring, day_of_week) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`, [
+            `INSERT INTO events (id, user_id, title, description, start_time, end_time, color, is_recurring, day_of_week) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`, [
             this.id, this.user_id, this.title, this.description, this.start_time, this.end_time, this.color, this.is_recurring, this.day_of_week
-        ]);
-
-        if (result.rowCount < 1) {
-            throw new Error('Error while adding new event.');
-        }
-    }
-
-    async update() {
-        const result = await pool.query(`UPDATE events SET title = ($1), description = ($2), start_time = ($3), end_time = ($4), color = ($5), is_recurring = ($6), day_of_week = ($7) WHERE id = ($8)`, [
-            this.title, this.description, this.start_time, this.end_time, this.color, this.is_recurring, this.day_of_week, this.id
         ]);
 
         if (result.rowCount < 1) {
             throw new Error('Error while adding new user.');
         }
+
+        return new EventRecord(result.rows[0]);
+    }
+
+    async update() {
+        const result = await pool.query(`UPDATE events SET title = ($1), description = ($2), start_time = ($3), end_time = ($4), color = ($5), is_recurring = ($6), day_of_week = ($7) WHERE id = ($8) RETURNING *`, [
+            this.title, this.description, this.start_time, this.end_time, this.color, this.is_recurring, this.day_of_week, this.id
+        ]);
+
+        if (result.rowCount < 1) {
+            throw new Error('Error while updating user.');
+        }
+
+        return new EventRecord(result.rows[0]);
     }
 
     async delete() {

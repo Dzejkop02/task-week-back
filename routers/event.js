@@ -44,23 +44,20 @@ eventRouter
         };
 
         const newEvent = new EventRecord(data);
-        await newEvent.save();
+        const addedEvent = await newEvent.save();
 
         res
             .status(201)
             .json({
                 ok: true,
-                data: formatEventResponse(newEvent),
+                data: formatEventResponse(addedEvent),
             });
     })
     .patch('/:id', authenticateUser, async (req, res) => {
         const {title, description, startTime, endTime, color, isRecurring, dayOfWeek} = req.body;
-
         const event = await EventRecord.find(req.params.id);
 
-        if (!event) {
-            throw new ValidationError('No task with this id found!');
-        }
+        validateEventOwnership(event, req.user.id);
 
         event.title = title ?? event.title;
         event.description = description ?? event.description;
@@ -70,11 +67,11 @@ eventRouter
         event.is_recurring = isRecurring ?? event.is_recurring;
         event.day_of_week = dayOfWeek ?? event.day_of_week;
 
-        await event.update();
+        const addedEvent = await event.update();
 
         res.status(200).json({
             ok: true,
-            data: formatEventResponse(event),
+            data: formatEventResponse(addedEvent),
         });
     })
     .get('/', authenticateUser, async (req, res) => {

@@ -35,33 +35,30 @@ taskRouter
             is_completed: isCompleted,
         });
 
-        await newTask.save();
+        const addedTask = await newTask.save();
 
         res
             .status(201)
             .json({
                 ok: true,
-                data: formatTaskResponse(newTask),
+                data: formatTaskResponse(addedTask),
             });
     })
     .patch('/:id', authenticateUser, async (req, res) => {
         const {title, description, isCompleted} = req.body;
-
         const task = await TaskRecord.find(req.params.id);
 
-        if (!task) {
-            throw new ValidationError('No task with this id found!');
-        }
+        validateTaskOwnership(task, req.user.id);
 
         task.title = title ?? task.title;
         task.description = description ?? task.description;
         task.is_completed = isCompleted ?? task.is_completed;
 
-        await task.update();
+        const addedTask = await task.update();
 
         res.status(200).json({
             ok: true,
-            data: formatTaskResponse(task),
+            data: formatTaskResponse(addedTask),
         });
     })
     .delete('/:id', authenticateUser, async (req, res) => {
