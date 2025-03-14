@@ -15,16 +15,23 @@ const formatEventResponse = (event) => ({
     color: event.color,
     isRecurring: event.is_recurring,
     dayOfWeek: event.day_of_week,
-    createdAt: event.created_at,
+    // createdAt: event.created_at,
+    createdAt: event.created_at.toISOString(),
 });
 
-const validateEventOwnership = (event, userId) => {
+const validateEventOwnershipMiddleware = async (req, res, next) => {
+    const event = await EventRecord.find(req.params.id);
+
     if (!event) {
-        throw new ValidationError('No task with this id found!');
+        throw new ValidationError('No event with this id found!');
     }
-    if (event.user_id !== userId) {
+
+    if (event.user_id !== req.user.id) {
         throw new UnauthorizedError('Not authorized to perform this action');
     }
+
+    req.event = event;
+    next();
 };
 
 eventRouter
@@ -53,18 +60,17 @@ eventRouter
                 data: formatEventResponse(addedEvent),
             });
     })
-    .patch('/:id', authenticateUser, async (req, res) => {
+    .patch('/:id', authenticateUser, validateEventOwnershipMiddleware, async (req, res) => {
         const {title, description, startTime, endTime, color, isRecurring, dayOfWeek} = req.body;
-        const event = await EventRecord.find(req.params.id);
 
-        validateEventOwnership(event, req.user.id);
+        const event = req.event;
 
         event.title = title ?? event.title;
         event.description = description ?? event.description;
         event.start_time = startTime ?? event.start_time;
         event.end_time = endTime ?? event.end_time;
         event.color = color ?? event.color;
-        event.is_recurring = isRecurring ?? event.is_recurring;
+        event.is_recurring = isRecurring !== undefined ? isRecurring : event.is_recurring;
         event.day_of_week = dayOfWeek ?? event.day_of_week;
 
         const addedEvent = await event.update();
@@ -82,11 +88,8 @@ eventRouter
             data: eventList.map(formatEventResponse),
         })
     })
-    .delete('/:id', authenticateUser, async (req, res) => {
-        const event = await EventRecord.find(req.params.id);
-
-        validateEventOwnership(event, req.user.id);
-        await event.delete();
+    .delete('/:id', authenticateUser, validateEventOwnershipMiddleware, async (req, res) => {
+        await req.event.delete();
 
         res.status(200).json({ok: true});
     });

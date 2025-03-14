@@ -11,6 +11,21 @@ const toMinutes = (time) => {
 
 class EventRecord {
     constructor(obj) {
+        this.validate(obj);
+
+        this.id = obj.id;
+        this.user_id = obj.user_id;
+        this.title = obj.title;
+        this.description = obj?.description;
+        this.start_time = obj.start_time;
+        this.end_time = obj.end_time;
+        this.color = obj.color;
+        this.is_recurring = obj?.is_recurring ?? false;
+        this.day_of_week = obj.day_of_week;
+        this.created_at = obj?.created_at;
+    }
+
+    validate(obj) {
         if (!obj.title || obj.title.length > 100) {
             throw new ValidationError('Invalid title.');
         }
@@ -39,17 +54,6 @@ class EventRecord {
         if (obj.day_of_week < 1 || obj.day_of_week > 7) {
             throw new ValidationError('day_of_week should be number between 1 and 7.');
         }
-
-        this.id = obj.id;
-        this.user_id = obj.user_id;
-        this.title = obj.title;
-        this.description = obj?.description;
-        this.start_time = obj.start_time;
-        this.end_time = obj.end_time;
-        this.color = obj.color;
-        this.is_recurring = obj?.is_recurring ?? false;
-        this.day_of_week = obj.day_of_week;
-        this.created_at = obj?.created_at;
     }
 
     static async find(id) {
@@ -76,12 +80,14 @@ class EventRecord {
     }
 
     async update() {
+        this.validate(this);
+
         const result = await pool.query(`UPDATE events SET title = ($1), description = ($2), start_time = ($3), end_time = ($4), color = ($5), is_recurring = ($6), day_of_week = ($7) WHERE id = ($8) RETURNING *`, [
             this.title, this.description, this.start_time, this.end_time, this.color, this.is_recurring, this.day_of_week, this.id
         ]);
 
         if (result.rowCount < 1) {
-            throw new Error('Error while updating user.');
+            throw new Error('Error updating event.');
         }
 
         return new EventRecord(result.rows[0]);
@@ -93,7 +99,7 @@ class EventRecord {
         ]);
 
         if (result.rowCount < 1) {
-            throw new Error('Error while adding new user.');
+            throw new Error('Error deleting event.');
         }
     }
 }
