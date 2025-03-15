@@ -44,6 +44,15 @@ authRouter
             deleteJwtCookie(res);
             throw error;
         }
+    })
+    .get("/check", authenticateUser, async (req, res) => {
+        res.status(200).json({
+            ok: true,
+            data: {
+                name: req.user.name,
+                email: req.user.email,
+            },
+        });
     });
 
 module.exports = {
