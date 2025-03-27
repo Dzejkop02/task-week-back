@@ -3,6 +3,8 @@ const {UserRecord} = require("../records/user.record");
 const {hashPwd} = require("../helpers/hashPwd");
 const {ValidationError} = require("../utils/errors");
 const { v4: uuid4 } = require('uuid');
+const {authenticateUser} = require("../middlewares/auth.middleware");
+const {deleteJwtCookie} = require("../utils/tokens");
 
 const userRouter = Router();
 
@@ -38,8 +40,30 @@ userRouter
                 data: {
                     email: newUser.email,
                     name: newUser.name,
+                    weeklyDeleting: false,
                 },
         });
+    })
+    .patch('/', authenticateUser, async (req, res) => {
+        const {weeklyDeleting} = req.body;
+
+        if (weeklyDeleting !== false && weeklyDeleting !== true) {
+            throw new ValidationError('Invalid weeklyDeleting argument. Allowed options: true | false');
+        }
+
+        req.user.weekly_deleting = weeklyDeleting ?? req.user.weekly_deleting;
+
+        const user = await req.user.update();
+
+        res.status(200).json({
+            ok: true,
+            data: {
+                email: user.email,
+                name: user.name,
+                weeklyDeleting: user.weekly_deleting,
+            },
+        });
+
     });
 
 module.exports = {

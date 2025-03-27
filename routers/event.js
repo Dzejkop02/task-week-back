@@ -92,6 +92,11 @@ eventRouter
         await req.event.delete();
 
         res.status(200).json({ok: true});
+    })
+    .delete('/', authenticateUser, async (req, res) => {
+        await EventRecord.deleteNotRecurring(req.user.id);
+
+        res.status(200).json({ok: true});
     });
 
 

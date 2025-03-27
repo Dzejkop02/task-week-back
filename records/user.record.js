@@ -24,6 +24,7 @@ class UserRecord {
         this.email = obj.email;
         this.pwd_hash = obj.pwd_hash;
         this.current_token_id = obj?.current_token_id;
+        this.weekly_deleting = obj?.weekly_deleting;
     }
 
     static async find(email) {
@@ -49,6 +50,18 @@ class UserRecord {
         if (result.rowCount < 1) {
             throw new Error('Error while adding new user.');
         }
+    }
+
+    async update() {
+        const result = await pool.query(`UPDATE users SET weekly_deleting = ($1) WHERE id = ($2) RETURNING *`, [
+            this.weekly_deleting, this.id
+        ]);
+
+        if (result.rowCount < 1) {
+            throw new Error('Error updating user.');
+        }
+
+        return new UserRecord(result.rows[0]);
     }
 
     async updateToken() {

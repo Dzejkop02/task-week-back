@@ -102,6 +102,16 @@ class EventRecord {
             throw new Error('Error deleting event.');
         }
     }
+
+    static async deleteNotRecurring(user_id) {
+        const result = await pool.query(`DELETE FROM events WHERE user_id = ($1) AND is_recurring = false`, [
+            user_id
+        ]);
+
+        if (result.rowCount < 1) {
+            throw new Error('Error deleting event.');
+        }
+    }
 }
 
 module.exports = {

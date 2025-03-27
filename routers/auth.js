@@ -30,6 +30,7 @@ authRouter
                 ok: true,
                 data: {
                     name: user.name,
+                    weeklyDeleting: user.weekly_deleting,
                 },
             });
     })
@@ -51,6 +52,7 @@ authRouter
             data: {
                 name: req.user.name,
                 email: req.user.email,
+                weeklyDeleting: req.user.weekly_deleting,
             },
         });
     });
