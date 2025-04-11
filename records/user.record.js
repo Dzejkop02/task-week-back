@@ -25,6 +25,7 @@ class UserRecord {
         this.pwd_hash = obj.pwd_hash;
         this.current_token_id = obj?.current_token_id;
         this.weekly_deleting = obj?.weekly_deleting;
+        this.last_weekly_clean = obj?.last_weekly_clean;
     }
 
     static async find(email) {
@@ -43,9 +44,10 @@ class UserRecord {
     }
 
     async save() {
-        const result = await pool.query(`INSERT INTO users (id, name, email, pwd_hash, current_token_id) VALUES ($1, $2, $3, $4, $5)`, [
-            this.id, this.name, this.email, this.pwd_hash, this.current_token_id
-        ]);
+        const result = await pool.query(
+            `INSERT INTO users (id, name, email, pwd_hash, current_token_id, last_weekly_clean) VALUES ($1, $2, $3, $4, $5, $6)`,
+            [this.id, this.name, this.email, this.pwd_hash, this.current_token_id, this.last_weekly_clean]
+        );
 
         if (result.rowCount < 1) {
             throw new Error('Error while adding new user.');
@@ -72,6 +74,19 @@ class UserRecord {
         if (result.rowCount < 1) {
             throw new Error('Error updating user token.');
         }
+    }
+
+    async updateLastWeeklyClean() {
+        const result = await pool.query(
+            `UPDATE users SET last_weekly_clean = $1 WHERE id = $2 RETURNING *`,
+            [this.last_weekly_clean, this.id]
+        );
+
+        if (result.rowCount < 1) {
+            throw new Error('Error updating last weekly clean.');
+        }
+
+        return new UserRecord(result.rows[0]);
     }
 }
 

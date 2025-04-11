@@ -34,6 +34,15 @@ const validateEventOwnershipMiddleware = async (req, res, next) => {
     next();
 };
 
+const getLastCompletedSunday = (currentDate) => {
+    const day = currentDate.getDay();
+    if (day === 0) {
+        return new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - 7);
+    } else {
+        return new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - day);
+    }
+};
+
 eventRouter
     .post('/', authenticateUser, async (req, res) => {
         const {title, description, startTime, endTime, color, isRecurring, dayOfWeek} = req.body;
@@ -81,6 +90,21 @@ eventRouter
         });
     })
     .get('/', authenticateUser, async (req, res) => {
+        if (req.user.weekly_deleting) {
+            const now = new Date();
+            const lastCompletedSunday = getLastCompletedSunday(now);
+            const cleaningThreshold = new Date(lastCompletedSunday);
+            cleaningThreshold.setDate(cleaningThreshold.getDate() + 1);
+
+            const lastClean = req.user.last_weekly_clean ? new Date(req.user.last_weekly_clean) : null;
+
+            if (!lastClean || lastClean < cleaningThreshold) {
+                await EventRecord.deleteNotRecurring(req.user.id);
+                req.user.last_weekly_clean = now;
+                await req.user.updateLastWeeklyClean();
+            }
+        }
+
         const eventList = await EventRecord.findAll(req.user.id);
 
         res.status(200).json({

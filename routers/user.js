@@ -27,6 +27,7 @@ userRouter
             name,
             email,
             pwd_hash: hashPwd(password),
+            last_weekly_clean: new Date()
         };
 
         const newUser = new UserRecord(userData);
