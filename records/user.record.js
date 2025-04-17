@@ -88,6 +88,19 @@ class UserRecord {
 
         return new UserRecord(result.rows[0]);
     }
+
+    async updatePassword(newPwdHash) {
+        const result = await pool.query(
+            `UPDATE users SET pwd_hash = $1 WHERE id = $2 RETURNING *`,
+            [newPwdHash, this.id]
+        );
+
+        if (result.rowCount < 1) {
+            throw new Error('Error updating password.');
+        }
+
+        return new UserRecord(result.rows[0]);
+    }
 }
 
 module.exports = {

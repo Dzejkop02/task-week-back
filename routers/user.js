@@ -65,6 +65,36 @@ userRouter
             },
         });
 
+    })
+    .patch('/password', authenticateUser, async (req, res) => {
+        const { oldPassword, newPassword } = req.body;
+
+        if (!oldPassword || !newPassword) {
+            throw new ValidationError('Provide old password and new password.');
+        }
+
+        if (newPassword.length < 3) {
+            throw new ValidationError('New password must be at least 3 characters long.');
+        }
+
+        const hashedOld = hashPwd(oldPassword);
+        if (req.user.pwd_hash !== hashedOld) {
+            throw new ValidationError('Old password is incorrect.');
+        }
+
+        const newHash = hashPwd(newPassword);
+        const updatedUser = await req.user.updatePassword(newHash);
+
+        deleteJwtCookie(res);
+
+        res.status(200).json({
+            ok: true,
+            data: {
+                email: updatedUser.email,
+                name: updatedUser.name,
+                message: 'Password changed successfully. Please log in again.',
+            },
+        });
     });
 
 module.exports = {
